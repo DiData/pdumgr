@@ -34,6 +34,7 @@ def main(argv):
     snmp_port = int(cfg.getConfigValue('pdu', 'snmp_port'))
     ro_community = cfg.getConfigValue('pdu', 'ro_community')
     rw_community = cfg.getConfigValue('pdu', 'rw_community')
+    dccode = cfg.getConfigValue('pdu', 'dccode')
 
     url = '%s/pdu/update' % cfg.getConfigValue('pdu', 'api_base')
 
@@ -56,7 +57,7 @@ def main(argv):
         if output is None:
             continue
 
-        data = {'ip_address': host}
+        data = {'ip_address': host, 'dccode': dccode}
 
         m = regsearch(r'SN.+([0-9A-Z]{12})', output)
         if m:
