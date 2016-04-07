@@ -1,0 +1,15 @@
+[pdu]
+# Set to the API server
+api_base = http://server_api
+# API Key to interact with the API server
+api_key = api_key_string
+
+# Scan port against PDUs (cannot scan against snmp ports easily, so we use tcp 80 which is open on most PDUs)
+scan_port = 80
+
+# SNMP port to use for polling PDU data
+snmp_port = 161
+
+# RO/RW communities for SNMP interactions with PDUs. APC defaults are below.
+ro_community = public
+rw_community = private
