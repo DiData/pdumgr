@@ -35,6 +35,9 @@ def scanner(ipaddr):
 #            print str(e)
             continue
 
+    if goodCredential is None:
+        return False
+
     print 'Good credential for %s:' % ipaddr, goodCredential
     data = {
         'ip_address': ipaddr,
@@ -46,7 +49,7 @@ def scanner(ipaddr):
     r = reqpost(url, headers={'SB-Auth-Key': cfg.getConfigValue('pdu', 'api_key')}, json=data)
     print r.json()
 
-url = '%s/pdu/getPduIpList?dccode=ash02' % cfg.getConfigValue('pdu', 'api_base')
+url = '%s/pdu/getPduIpList?dccode=%s' % (cfg.getConfigValue('pdu', 'api_base'), cfg.getConfigValue('pdu', 'dccode'))
 r = reqget(url, headers={'SB-Auth-Key': cfg.getConfigValue('pdu', 'api_key')})
 print r.json()
 resp = r.json()
