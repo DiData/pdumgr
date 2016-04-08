@@ -13,8 +13,12 @@ import time
 
 # IPv6 Interface (only auto configuration required.)
 interface = 'eth1'
+# Default APC PDU username
 defaultUser = 'apc'
+# Default APC PDU password
 defaultPass = 'apc'
+# Put your IPv6 addresses in here (delimited by new line \n)
+file = 'iplist.txt'
 
 def scanner(ipaddr, uniq, interface, user, pw):
     print 'Running FTP against: %s uniq: %s' % (ipaddr, uniq)
@@ -56,7 +60,7 @@ def scanner(ipaddr, uniq, interface, user, pw):
 
 
 content = None
-with open('iplist.txt', 'r') as f:
+with open(file, 'r') as f:
     content = f.read()
 
 lines = []
