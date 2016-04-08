@@ -10,7 +10,7 @@ cfg = configSystem('config.cfg')
 
 # Check PDU credentials and update our DB with the correct credentials
 # Why the hell are we using FTP? Well, mostly because our other methods seem to block IPs after too many failed logins
-url = '%s/pdu/getCredsPerDC?dccode=ash02' % cfg.getConfigValue('pdu', 'api_base')
+url = '%s/pdu/getCredsPerDC?dccode=%s' % (cfg.getConfigValue('pdu', 'api_base'), cfg.getConfigValue('pdu', 'dccode'))
 r = reqget(url, headers={'SB-Auth-Key': cfg.getConfigValue('pdu', 'api_key')})
 resp = r.json()
 if 'credlist' not in resp:
