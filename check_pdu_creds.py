@@ -8,11 +8,17 @@ import time, sys, os
 
 cfg = configSystem('config.cfg')
 
+# Override
+dccode = ''
+#dccode = cfg.getConfigValue('pdu', 'dccode')
+
 # Check PDU credentials and update our DB with the correct credentials
 # Why the hell are we using FTP? Well, mostly because our other methods seem to block IPs after too many failed logins
-url = '%s/pdu/getCredsPerDC?dccode=%s' % (cfg.getConfigValue('pdu', 'api_base'), cfg.getConfigValue('pdu', 'dccode'))
+url = '%s/pdu/getCredsPerDC?dccode=%s' % (cfg.getConfigValue('pdu', 'api_base'), dccode)
 r = reqget(url, headers={'SB-Auth-Key': cfg.getConfigValue('pdu', 'api_key')})
 resp = r.json()
+print resp
+
 if 'credlist' not in resp:
     exit()
 else:
@@ -49,14 +55,16 @@ def scanner(ipaddr):
     r = reqpost(url, headers={'SB-Auth-Key': cfg.getConfigValue('pdu', 'api_key')}, json=data)
     print r.json()
 
-url = '%s/pdu/getPduIpList?dccode=%s' % (cfg.getConfigValue('pdu', 'api_base'), cfg.getConfigValue('pdu', 'dccode'))
+
+url = '%s/pdu/getPduData?dccode=%s' % (cfg.getConfigValue('pdu', 'api_base'), dccode)
 r = reqget(url, headers={'SB-Auth-Key': cfg.getConfigValue('pdu', 'api_key')})
-print r.json()
 resp = r.json()
-if 'iplist' not in resp:
+if 'data' not in resp:
     exit()
 
-for ipaddr in resp['iplist']:
-#    scanner(ipaddr)
-    t = Thread(target=scanner, args=(ipaddr,))
-    t.start()
+for data in resp['data']:
+    if len(data['serial_number']) > 0:
+        ipaddr = data['ip_address']
+#        scanner(data['ip_address'])
+        t = Thread(target=scanner, args=(ipaddr,))
+        t.start()

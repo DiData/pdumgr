@@ -11,6 +11,8 @@ import time
 # - replace with IPv4=enabled
 # - upload config back up to FTP
 
+# IPv6 or IPv4
+ipv6 = False
 # IPv6 Interface (only auto configuration required.)
 interface = 'eth1'
 # Default APC PDU username
@@ -24,7 +26,10 @@ def scanner(ipaddr, uniq, interface, user, pw):
     print 'Running FTP against: %s uniq: %s' % (ipaddr, uniq)
 
     try:
-        ftp = FTP(ipaddr+'%'+interface, user, pw)
+        if ipv6 is True:
+            ftp = FTP(ipaddr+'%'+interface, user, pw)
+        else:
+            ftp = FTP(ipaddr, user, pw)
     except:
         return False
 
@@ -36,6 +41,8 @@ def scanner(ipaddr, uniq, interface, user, pw):
     ftp.quit()
 
     file.close()
+
+    return True
 
     f1 = open(old_filename, 'r')
     f2 = open(new_filename, 'w')
@@ -51,7 +58,10 @@ def scanner(ipaddr, uniq, interface, user, pw):
 
     if triggered is True:
         try:
-            ftp = FTP(ipaddr+'%'+interface, user, pw)
+            if ipv6 is True:
+                ftp = FTP(ipaddr+'%'+interface, user, pw)
+            else:
+                ftp = FTP(ipaddr, user, pw)
         except:
             return False
         print 'Storing config.ini to %s' % ipaddr
