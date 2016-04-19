@@ -65,13 +65,13 @@ def scanner(data):
         print url
         return False
 
-    print 'Performing action: %s (s/n: %s): GENRESET1 {TCPIP}' % (ipaddr, serial)
-    tmpdata = { 'resetSelect': 'ResetExceptTCPIP', 'resetOnlyOptions': '?1', 'submit': 'Apply' }
-    resetres = pdusess.post('http://%s/%s/%s/Forms/genreset1' % (ipaddr, appPrefix, sessionToken), data=tmpdata)
+#    print 'Performing action: %s (s/n: %s): GENRESET1 {TCPIP}' % (ipaddr, serial)
+#    tmpdata = { 'resetSelect': 'ResetExceptTCPIP', 'resetOnlyOptions': '?1', 'submit': 'Apply' }
+#    resetres = pdusess.post('http://%s/%s/%s/Forms/genreset1' % (ipaddr, appPrefix, sessionToken), data=tmpdata)
 
-    print 'Performing action: %s (s/n: %s): RSTCNFRM1 {TCPIP}' % (ipaddr, serial)
-    tmpdata = { 'submit': 'Apply' }
-    resetres = pdusess.post('http://%s/%s/%s/Forms/rstcnfrm1' % (ipaddr, appPrefix, sessionToken), data=tmpdata)
+#    print 'Performing action: %s (s/n: %s): RSTCNFRM1 {TCPIP}' % (ipaddr, serial)
+#    tmpdata = { 'submit': 'Apply' }
+#    resetres = pdusess.post('http://%s/%s/%s/Forms/rstcnfrm1' % (ipaddr, appPrefix, sessionToken), data=tmpdata)
 
     print 'Performing action: %s (s/n: %s): GENRESET1 {REBOOT}' % (ipaddr, serial)
     tmpdata = { 'resetSelect': 'Reboot', 'submit': 'Apply' }
@@ -86,8 +86,8 @@ def scanner(data):
 
 
 
-dccode = 'iad03'
-#dccode = cfg.getConfigValue('pdu', 'dccode')
+#dccode = ''
+dccode = cfg.getConfigValue('pdu', 'dccode')
 url = '%s/pdu/getPduData?dccode=%s' % (cfg.getConfigValue('pdu', 'api_base'), dccode)
 r = reqget(url, headers={'SB-Auth-Key': cfg.getConfigValue('pdu', 'api_key')})
 resp = r.json()
