@@ -15,8 +15,8 @@ import fileinput
 cfg = configSystem('config.cfg')
 
 # Override
-dccode = 'gci01'
-#dccode = cfg.getConfigValue('pdu', 'dccode')
+#dccode = ''
+dccode = cfg.getConfigValue('pdu', 'dccode')
 
 def wrf(b, file):
     if 'C for Celsius' not in b:
