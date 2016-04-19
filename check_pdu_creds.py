@@ -9,8 +9,8 @@ import time, sys, os
 cfg = configSystem('config.cfg')
 
 # Override
-dccode = ''
-#dccode = cfg.getConfigValue('pdu', 'dccode')
+#dccode = ''
+dccode = cfg.getConfigValue('pdu', 'dccode')
 
 # Check PDU credentials and update our DB with the correct credentials
 # Why the hell are we using FTP? Well, mostly because our other methods seem to block IPs after too many failed logins
@@ -25,6 +25,9 @@ else:
     credentialList = resp['credlist']
 
 def scanner(ipaddr):
+    if ipaddr is None and len(ipaddr) > 0:
+        return False
+
     print 'Running FTP against: %s' % (ipaddr)
 
     goodCredential = None
@@ -37,7 +40,8 @@ def scanner(ipaddr):
             goodCredential = cred
             break
         except Exception as e:
-            ftp.quit()
+            if ftp is not None:
+                ftp.quit()
 #            print str(e)
             continue
 
