@@ -8,8 +8,20 @@ from ftplib import FTP
 from config import configSystem
 import time
 from shutil import copyfile
+from subprocess import call as proccall
+import linecache
+import fileinput
 
 cfg = configSystem('config.cfg')
+
+# Override
+dccode = 'gci01'
+#dccode = cfg.getConfigValue('pdu', 'dccode')
+
+def wrf(b, file):
+    if 'C for Celsius' not in b:
+        file.write(b)
+
 
 # The purpose of this script is very simple. We loop through a list of IPv6 auto configure addresses:
 # - pull the config down via FTP
@@ -48,47 +60,126 @@ def scanner(data):
     new_filename = 'config_new_'+serial+'.ini'
     file = open(old_filename, 'wb')
     print 'Retrieving config.ini from %s' % ipaddr
-    ftp.retrbinary('RETR config.ini', file.write)
+    ftp.retrbinary('RETR config.ini', lambda b: wrf(b, file))
     ftp.quit()
 
     file.close()
-    copyfile(old_filename, new_filename)
-    pduCfg = configSystem(new_filename)
-    print pduCfg.getConfigValue('NetworkTCP/IP', 'IPv4')
 
+    # Detect version of NMC
+    pduVer = linecache.getline(old_filename, 3)
 
+    print pduVer
 
-    f1 = open(old_filename, 'r')
-    f2 = open(new_filename, 'w')
+    pduCfg = configSystem(old_filename)
+
     triggered = False
-    for line in f1:
-        if 'IPv4=disabled' in line:
+
+    currentSnmpName = None
+    currentSnmpContact = None
+    currentSnmpLocation = None
+
+    if 'RPDU 2g' in pduVer:
+        currentTelnetMode = pduCfg.getConfigValue('NetworkTelnet', 'Access')
+        if currentTelnetMode is not None and currentTelnetMode != 'disabled':
+            pduCfg.setConfigValue('NetworkTelnet', 'Access', 'disabled')
             triggered = True
-            f2.write(line.replace('disabled', 'enabled'))
-        else:
-            f2.write(line)
-    f1.close()
-    f2.close()
 
-    print 'Triggered: %s, but skipping' % triggered
-    return False
+        currentSSHMode = pduCfg.getConfigValue('NetworkTelnet', 'ProtocolMode')
+        if currentSSHMode is not None and currentSSHMode != 'enabled':
+            pduCfg.setConfigValue('NetworkTelnet', 'ProtocolMode', 'enabled')
+            triggered = True
 
+        if 'hostname' in data and len(data['hostname']) > 0:
+            currentSnmpName = pduCfg.getConfigValue('Device', 'NAME_A')
+            newSnmpName = data['hostname']
+            if currentSnmpName is not None and currentSnmpName != newSnmpName:
+                pduCfg.setConfigValue('Device', 'NAME_A', newSnmpName)
+                triggered = True
+
+        currentSnmpContact = pduCfg.getConfigValue('Device', 'CONTACT_A')
+        newSnmpContact = 'Infrastructure Team'
+        if currentSnmpContact is not None and currentSnmpContact != newSnmpContact:
+            pduCfg.setConfigValue('Device', 'CONTACT_A', newSnmpContact)
+            triggered = True
+
+        if 'loc' in data and len(data['loc']) > 0:
+            currentSnmpLocation = pduCfg.getConfigValue('Device', 'LOCATION_A')
+            newSnmpLocation = data['loc']
+            if currentSnmpLocation is not None and currentSnmpLocation != newSnmpLocation:
+                pduCfg.setConfigValue('Device', 'LOCATION_A', newSnmpLocation)
+                triggered = True
+
+    elif 'Rack PDU' in pduVer:
+        currentTelnetMode = pduCfg.getConfigValue('NetworkTelnet', 'Telnet')
+        if currentTelnetMode is not None and currentTelnetMode != 'disabled':
+            pduCfg.setConfigValue('NetworkTelnet', 'Telnet', 'disabled')
+            triggered = True
+
+        currentSSHMode = pduCfg.getConfigValue('NetworkTelnet', 'SSH')
+        if currentSSHMode is not None and currentSSHMode2 != 'enabled':
+            pduCfg.setConfigValue('NetworkTelnet', 'SSH', 'enabled')
+            triggered = True
+
+        if 'hostname' in data and len(data['hostname']) > 0:
+            currentSnmpName = pduCfg.getConfigValue('SystemID', 'Name')
+            newSnmpName = data['hostname']
+            if currentSnmpName is not None and currentSnmpName != newSnmpName:
+                pduCfg.setConfigValue('SystemID', 'Name', newSnmpName)
+                triggered = True
+
+        currentSnmpContact = pduCfg.getConfigValue('SystemID', 'Contact')
+        newSnmpContact = 'Infrastructure Team'
+        if currentSnmpContact is not None and currentSnmpContact != newSnmpContact:
+            pduCfg.setConfigValue('SystemID', 'Contact', newSnmpContact)
+            triggered = True
+
+        if 'loc' in data and len(data['loc']) > 0:
+            currentSnmpLocation = pduCfg.getConfigValue('SystemID', 'Location')
+            newSnmpLocation = data['loc']
+            if currentSnmpLocation is not None and currentSnmpLocation != newSnmpLocation:
+                pduCfg.setConfigValue('SystemID', 'Location', newSnmpLocation)
+                triggered = True
+    elif 'Automatic Transfer Switch' in pduVer:
+        print 'Manually set up SNMP on: %s (s/n: %s)' % (ipaddr, serial)
+
+
+    if 'hostname' in data and len(data['hostname']) > 0:
+        currentHostname = pduCfg.getConfigValue('NetworkTCP/IP', 'HostName')
+        newHostname = data['hostname']
+        if currentHostname is not None and currentHostname != newHostname:
+            pduCfg.setConfigValue('NetworkTCP/IP', 'HostName', newHostname)
+            triggered = True
+
+    currentDomain = pduCfg.getConfigValue('NetworkTCP/IP', 'DomainName')
+    newDomain = 'infra-pdu.didata'
+    if currentDomain is not None and currentDomain != newDomain:
+        pduCfg.setConfigValue('NetworkTCP/IP', 'DomainName', newDomain)
+        triggered = True
+
+    print 'Current hostname: %s domain: %s' % (currentHostname, currentDomain)
+
+
+    print 'Current snmpname: %s snmpcontact: %s snmplocation: %s' % (currentSnmpName, currentSnmpContact, currentSnmpLocation)
 
     if triggered is True:
+        pduCfg.writeConfig(new_filename)
+        proccall(['unix2dos', new_filename])
         try:
             if ipv6 is True:
                 ftp = FTP(ipaddr+'%'+interface, user, pw)
             else:
                 ftp = FTP(ipaddr, user, pw)
         except:
+            print 'Exception while trying to connect to ip: %s u: %s p: %s' % (ipaddr, user, pw)
             return False
         print 'Storing config.ini to %s' % ipaddr
-        ftp.storbinary('STOR config.ini', open(new_filename, 'rb'))
-        ftp.quit()
+        try:
+            ftp.storbinary('STOR config.ini', open(new_filename, 'rb'))
+            ftp.quit()
+        except:
+            print 'Exception while trying to store config %s on %s' % (new_filename, ipaddr)
+            return False
 
-# Override
-dccode = ''
-#dccode = cfg.getConfigValue('pdu', 'dccode')
 url = '%s/pdu/getPduData?dccode=%s' % (cfg.getConfigValue('pdu', 'api_base'), dccode)
 r = reqget(url, headers={'SB-Auth-Key': cfg.getConfigValue('pdu', 'api_key')})
 resp = r.json()
@@ -97,7 +188,8 @@ if 'data' not in resp:
 
 for data in resp['data']:
     if len(data['serial_number']) > 0:
-        scanner(data)
-#        t = Thread(target=scanner, args=(data,))
-#        t.start()
-#        time.sleep(.1)
+#        scanner(data)
+#        exit()
+        t = Thread(target=scanner, args=(data,))
+        t.start()
+        time.sleep(.1)

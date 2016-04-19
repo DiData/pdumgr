@@ -1,4 +1,4 @@
-from requests import post as reqpost, get as reqget
+from requests import post as reqpost, get as reqget, put as reqput
 
 class D42:
     __lastResponse = None
@@ -17,11 +17,28 @@ class D42:
             auth=(self.__user, self.__pass),
             data=params
         )
-        return r.json()
+        try:
+            return r.json()
+        except ValueError:
+            print 'Bad JSON data?', r.text
 
     def api_get(self, url):
         r = reqget(
             '%s%s' % (self.__baseUrl, url),
             auth=(self.__user, self.__pass)
         )
-        return r.json()
+        try:
+            return r.json()
+        except ValueError:
+            print 'Bad JSON data?', r.text
+
+    def api_put(self, url, params):
+        r = reqput(
+            '%s%s' % (self.__baseUrl, url),
+            auth=(self.__user, self.__pass),
+            data=params
+        )
+        try:
+            return r.json()
+        except ValueError:
+            print 'Bad JSON data?', r.text
